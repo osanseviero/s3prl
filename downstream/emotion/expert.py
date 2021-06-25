@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader, random_split
 from torch.nn.utils.rnn import pad_sequence
 
 from downstream.model import *
-from .dataset import IEMOCAPDataset, collate_fn
+from .dataset import IEMOCAPDataset, collate_fn, EmotionHidden
 
 
 class DownstreamExpert(nn.Module):
@@ -36,14 +36,14 @@ class DownstreamExpert(nn.Module):
             DATA_ROOT, 'meta_data', self.fold.replace('fold', 'Session'), 'test_meta_data.json')
         print(f'[Expert] - Testing path: {test_path}')
         
-        dataset = IEMOCAPDataset(DATA_ROOT, train_path, self.datarc['pre_load'])
+        dataset = IEMOCAPDataset(DATA_ROOT, train_path, self.datarc['pre_load'], self.datarc['normalize'])
         trainlen = int((1 - self.datarc['valid_ratio']) * len(dataset))
         lengths = [trainlen, len(dataset) - trainlen]
         
         torch.manual_seed(0)
         self.train_dataset, self.dev_dataset = random_split(dataset, lengths)
 
-        self.test_dataset = IEMOCAPDataset(DATA_ROOT, test_path, self.datarc['pre_load'])
+        self.test_dataset = IEMOCAPDataset(DATA_ROOT, test_path, self.datarc['pre_load'], self.datarc['normalize'])
 
         model_cls = eval(self.modelrc['select'])
         model_conf = self.modelrc.get(self.modelrc['select'], {})
@@ -86,6 +86,16 @@ class DownstreamExpert(nn.Module):
     def get_test_dataloader(self):
         return self._get_eval_dataloader(self.test_dataset)
 
+    def get_hidden_dev_dataloader(self):
+        if not hasattr(self, "hidden_dev_dataset"):
+            self.hidden_dev_dataset = EmotionHidden(self.datarc["hidden_path"], dev=True, normalize=self.datarc['normalize'])
+        return self._get_eval_dataloader(self.hidden_dev_dataset)
+
+    def get_hidden_test_dataloader(self):
+        if not hasattr(self, "hidden_test_dataset"):
+            self.hidden_test_dataset = EmotionHidden(self.datarc["hidden_path"], dev=False, normalize=self.datarc['normalize'])
+        return self._get_eval_dataloader(self.hidden_test_dataset)
+
     # Interface
     def get_dataloader(self, mode):
         return eval(f'self.get_{mode}_dataloader')()
@@ -119,6 +129,7 @@ class DownstreamExpert(nn.Module):
             )
             with open(self.logging, 'a') as f:
                 if key == 'acc':
+                    print(f"{mode} acc: {average}")
                     f.write(f'{mode} at step {global_step}: {average}\n')
                     if mode == 'dev' and average > self.best_score:
                         self.best_score = torch.ones(1) * average
