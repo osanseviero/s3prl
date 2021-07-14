@@ -99,16 +99,17 @@ def generate_length(args, tr_set, audio_extension):
 #################################
 # GENERATE LENGTH WITH DATASETS #
 #################################
-def compute_audio_length(batch):
+def compute_audio_features(batch):
     speech_array, _ = sf.read(batch["file"])
     batch["length"] = speech_array.shape[-1]
+    # Strip out file path relative to LibriSpeech root directory
+    batch["file_path"] = batch["file"].split("LibriSpeech/")[-1]
     return batch
 
 
 def generate_length_with_datasets(split:str, dataset: Dataset, args):
-    dataset = dataset.map(compute_audio_length, num_proc=args.n_jobs)
+    dataset = dataset.map(compute_audio_features, num_proc=args.n_jobs)
     dataset = dataset.sort("length", reverse=True)
-    dataset = dataset.rename_columns({"file":"file_path"})
     dataset = dataset.add_column("label", [None] * len(dataset))
     output_dir = Path(args.output_path).joinpath(args.name)
     dataset.to_csv(f"{output_dir/split}.csv", columns=["file_path", "length", "label"])
