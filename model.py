@@ -18,8 +18,8 @@ class PreTrainedModel(Runner):
         ckp = torch.load(ckp_file, map_location='cpu')
         ckp["Args"].mode = "inference"
         ckp["Args"].device = "cpu" # Just to try in my computer
+        ckp["Args"].init_ckpt = ckp_file
         ckp["Config"]["downstream_expert"]["datarc"]["dict_path"]='./downstream/asr/char.dict'
-        
         Runner.__init__(self, ckp["Args"], ckp["Config"])
         
     def __call__(self, inputs)-> Dict[str, str]:
