@@ -111,7 +111,9 @@ def generate_length_with_datasets(split:str, dataset: Dataset, args):
     dataset = dataset.map(compute_audio_features, num_proc=args.n_jobs)
     dataset = dataset.sort("length", reverse=True)
     dataset = dataset.add_column("label", [None] * len(dataset))
+
     output_dir = Path(args.output_path).joinpath(args.name)
+    output_dir.mkdir(parents=True, exist_ok=True)
     dataset.to_csv(f"{output_dir/split}.csv", columns=["file_path", "length", "label"])
 
 
