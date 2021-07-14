@@ -211,9 +211,10 @@ class DownstreamExpert(nn.Module):
         _, pred_words_batch = self._decode(log_probs.float().contiguous().cpu(), log_probs_len)
         hyps = [' '.join(hyp) for hyp in pred_words_batch]
 
-        with open(Path(self.expdir) / "inference.ark", "w") as file:
-            for hyp, filename in zip(hyps, filenames):
-                file.write(f"{filename} {hyp}\n")
+        if filenames != []:
+            with open(Path(self.expdir) / "inference.ark", "w") as file:
+                for hyp, filename in zip(hyps, filenames):
+                    file.write(f"{filename} {hyp}\n")
 
         return hyps
 
