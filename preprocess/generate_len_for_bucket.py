@@ -47,9 +47,12 @@ def get_preprocess_args():
     
     parser = argparse.ArgumentParser(description='preprocess arguments for any dataset.')
 
+    parser.add_argument('-i', '--input_data', default='../LibriSpeech/', type=str, help='Path to your LibriSpeech directory', required=False)
     parser.add_argument('-o', '--output_path', default='./data/', type=str, help='Path to store output', required=False)
+    parser.add_argument('-a', '--audio_extension', default='.flac', type=str, help='audio file type (.wav / .flac / .mp3 / etc)', required=False)
     parser.add_argument('-n', '--name', default='len_for_bucket', type=str, help='Name of the output directory', required=False)
     parser.add_argument('--n_jobs', default=-1, type=int, help='Number of jobs used for feature extraction', required=False)
+    parser.add_argument('--use_datasets', default=False, type=boolean_string, help='Use datasets library for downloading and preprocessing data', required=False)
 
     args = parser.parse_args()
     return args
@@ -108,6 +111,7 @@ def compute_audio_features(batch):
 
 
 def generate_length_with_datasets(split:str, dataset: Dataset, args):
+    print(f"Preprocessing data in: {dataset.cache_files[0]['filename']}")
     dataset = dataset.map(compute_audio_features, num_proc=args.n_jobs)
     dataset = dataset.sort("length", reverse=True)
     dataset = dataset.add_column("label", [None] * len(dataset))
@@ -116,6 +120,8 @@ def generate_length_with_datasets(split:str, dataset: Dataset, args):
     output_dir.mkdir(parents=True, exist_ok=True)
     dataset.to_csv(f"{output_dir/split}.csv", columns=["file_path", "length", "label"])
 
+    print(f"All done, files saved at {output_dir}")
+
 
 ########
 # MAIN #
@@ -123,10 +129,25 @@ def generate_length_with_datasets(split:str, dataset: Dataset, args):
 def main():
 
     args = get_preprocess_args()
-    asr = load_dataset("superb", "asr")
 
-    for split, dataset in asr.items():
-        generate_length_with_datasets(split, dataset, args)
+    if args.use_datasets:
+        asr = load_dataset("superb", "asr")
+        for split, dataset in asr.items():
+            generate_length_with_datasets(split, dataset, args)
+    else:
+        if 'librispeech' in args.input_data.lower():
+            SETS = ['train-clean-100', 'train-clean-360', 'train-other-500', 'dev-clean', 'dev-other', 'test-clean', 'test-other']
+        elif 'timit' in args.input_data.lower():
+            SETS = ['TRAIN', 'TEST']
+
+        # Select data sets
+        for idx, s in enumerate(SETS):
+            print('\t', idx, ':', s)
+        tr_set = input('Please enter the index of splits you wish to use preprocess. (seperate with space): ')
+        tr_set = [SETS[int(t)] for t in tr_set.split(' ')]
+
+        # Acoustic Feature Extraction & Make Data Table
+        generate_length(args, tr_set, args.audio_extension)
 
 
 if __name__ == '__main__':
