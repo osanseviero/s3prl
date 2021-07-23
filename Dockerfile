@@ -1,4 +1,9 @@
+# We need this to use GPUs inside the container
+FROM nvidia/cuda:10.2-base
+# Using a multi-stage build simplifies the s3prl installation
+# TODO: find a slimmer base image that also "just works"
 FROM tiangolo/uvicorn-gunicorn:python3.8
+
 
 RUN apt-get update --fix-missing && apt-get install -y wget \
     libsndfile1 \
