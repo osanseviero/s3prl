@@ -167,13 +167,13 @@ Only the training part is powered by **DistributedDataParallel**, and we save al
 In the root of the repo, first build the image with
 
 ```
-docker build .
+docker build -t s3prl:latest
 ```
 
-Then run the container with the data mounted:
+Then run the container the [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker) and with the data mounted as follows:
 
 ```
-docker run -d -P -v /path/to/s3prl/data:/app/data s3prl
+docker run --gpus all -it -P -v /path/to/superb/data:/app/data s3prl
 ```
 
 # SUPERB Benchmark

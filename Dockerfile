@@ -16,11 +16,10 @@ RUN python -m pip --no-cache-dir install git+https://github.com/osanseviero/s3pr
 
 COPY s3prl/ /app/s3prl
 COPY src/ /app/src
-WORKDIR /app
 
 # Setup filesystem
-RUN mkdir data
+RUN mkdir /app/data
 
+WORKDIR /app/s3prl
 # Fine-tune!
-# python run_downstream.py -n asr-test -m train -u fbank -d asr --device cpu -o "config.downstream_expert.datarc.dict_path='./downstream/asr/char.dict',,config.downstream_expert.datarc.libri_root='/app/data/LibriSpeech',,config.downstream_expert.datarc.batch_size=1,,config.downstream_expert.datarc.bucket_file='/app/data/LibriSpeech/len_for_bucket'"
-# CMD ["python", "run_downstream.py", "-n", "asr-test", "-m", "train", "-u", "fbank", "-d", "asr"]
+CMD python run_downstream.py -n asr-test -m train -u fbank -d asr -o "config.downstream_expert.datarc.dict_path='./downstream/asr/char.dict',,config.downstream_expert.datarc.libri_root='/app/data/LibriSpeech',,config.downstream_expert.datarc.batch_size=1,,config.downstream_expert.datarc.bucket_file='/app/data/LibriSpeech/len_for_bucket'"
