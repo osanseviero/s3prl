@@ -1,5 +1,5 @@
 # We need this to use GPUs inside the container
-FROM nvidia/cuda:10.2-base
+FROM nvidia/cuda:11.2.2-base
 # Using a multi-stage build simplifies the s3prl installation
 # TODO: Find a slimmer base image that also "just works"
 FROM tiangolo/uvicorn-gunicorn:python3.8
@@ -23,5 +23,9 @@ RUN mkdir /app/data
 WORKDIR /app/s3prl
 
 # Fine-tune!
-# TODO: Find a way to configure this at runtime (env variables?)
-CMD python run_downstream.py -n asr-test -m train -u fbank -d asr -o "config.downstream_expert.datarc.dict_path='./downstream/asr/char.dict',,config.downstream_expert.datarc.libri_root='/app/data/LibriSpeech',,config.downstream_expert.datarc.batch_size=1,,config.downstream_expert.datarc.bucket_file='/app/data/LibriSpeech/len_for_bucket'"
+ENV batch_size 32
+ENV upstream_model hubert
+ENV downstream_task asr
+ENV expt_name asr
+# TODO: Consider using each task's config.yaml to set all the -o parameters
+CMD python run_downstream.py -n ${expt_name} -m train -u ${upstream_model} -d ${downstream_task} -o "config.downstream_expert.datarc.dict_path='./downstream/asr/char.dict',,config.downstream_expert.datarc.libri_root='/app/data/LibriSpeech',,config.downstream_expert.datarc.batch_size=${batch_size},,config.downstream_expert.datarc.bucket_file='/app/data/LibriSpeech/len_for_bucket'"
