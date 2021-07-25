@@ -167,7 +167,7 @@ Only the training part is powered by **DistributedDataParallel**, and we save al
 In the root of the repo, first build the image with
 
 ```
-docker build -t s3prl:latest
+docker build -t s3prl:latest .
 ```
 
 Then run the container the [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker) and with the data mounted as follows:
